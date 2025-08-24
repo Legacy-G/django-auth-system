@@ -1,0 +1,193 @@
+<!-- Modal -->
+<div class="modal fade" id="signinModal" tabindex="-1" aria-labelledby="signinModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+
+      <!-- Messages Section -->
+      {% if messages %}
+        <div class="px-3 pt-3">
+          {% for message in messages %}
+            <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center" role="alert">
+              <svg class="bi flex-shrink-0 me-2" width="24" height="24" role="img" aria-label="Danger:">
+                <use xlink:href="#exclamation-triangle-fill"/>
+              </svg>
+              <div>{{ message }}</div>
+              <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h5 class="modal-title" id="signinModalLabel">Signin</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <!-- Modal Body -->
+      <form method="POST" action="{% url 'signin' %}">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="FirstName" class="form-label">First Name</label>
+            <input type="text" class="form-control" id="FirstName" name="first_name" placeholder="First Name" required>
+
+            <label for="LastName" class="form-label">Last Name</label>
+            <input type="text" class="form-control" id="LastName" name="last_name" placeholder="Last Name" required> 
+
+            <label for="Username" class="form-label">Username</label>
+            <input type="text" class="form-control" id="Username" name="username" placeholder="Username" required>
+
+            <label for="Email" class="form-label">Email</label>
+            <input type="email" class="form-control" id="Email" name="email" placeholder="Email" required>
+
+            <label for="Password" class="form-label">Password</label>
+            <input type="password" class="form-control" id="Password" name="password" placeholder="Password" required>
+            <div id="passwordHelp" class="form-text">
+              Must be 8–20 characters, include letters and numbers, no spaces or emoji.
+            </div>
+
+            <label for="ConfirmPassword" class="form-label">Confirm Password</label>
+            <input type="password" class="form-control" id="ConfirmPassword" name="confirm_password" placeholder="Confirm Password" required>
+          </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="switchToLoginModal()">Go to Login</button>
+
+          <script>
+            function switchToLoginModal() {
+              const signinModalEl = document.getElementById('signinModal');
+              const loginModalEl = document.getElementById('loginModal');
+
+              const signinModal = bootstrap.Modal.getInstance(signinModalEl);
+              signinModal.hide();
+
+              // Wait for the modal to fully hide before showing the next
+              signinModalEl.addEventListener('hidden.bs.modal', () => {
+                const loginModal = new bootstrap.Modal(loginModalEl);
+                loginModal.show();
+                document.body.classList.remove('modal-open');
+                document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+              }, { once: true }); // Ensures the event listener runs only once
+            }
+          </script>
+          <button type="submit" class="btn btn-primary">Signin</button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+</div>
+
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const emailInput = document.getElementById('Email');
+    const usernameInput = document.getElementById('Username');
+    const passwordInput = document.getElementById('Password');
+    const confirmPasswordInput = document.getElementById('ConfirmPassword');
+    const submitBtn = document.querySelector('#signinModal button[type="submit"]');
+
+    // Create alert containers
+    const emailAlert = document.createElement('div');
+    const usernameAlert = document.createElement('div');
+    const confirmAlert = document.createElement('div');
+    emailAlert.classList.add('mt-2');
+    usernameAlert.classList.add('mt-2');
+    confirmAlert.classList.add('mt-2');
+
+    emailInput.parentNode.insertBefore(emailAlert, emailInput.nextSibling);
+    usernameInput.parentNode.insertBefore(usernameAlert, usernameInput.nextSibling);
+    confirmPasswordInput.parentNode.insertBefore(confirmAlert, confirmPasswordInput.nextSibling);
+
+    let emailValid = false;
+    let usernameValid = false;
+    let passwordsMatch = false;
+
+    // Email validation
+    emailInput.addEventListener('input', function () {
+      const email = emailInput.value.trim();
+      if (email.length > 5 && email.includes('@')) {
+        fetch(`/check-email/?email=${encodeURIComponent(email)}`)
+          .then(response => response.json())
+          .then(data => {
+            emailAlert.innerHTML = '';
+            if (!data.valid) {
+              emailAlert.innerHTML = `
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                  Please enter a valid email address.
+                </div>`;
+              emailValid = false;
+            } else if (data.exists) {
+              emailAlert.innerHTML = `
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                  This email is already registered.
+                </div>`;
+              emailValid = false;
+            } else {
+              emailValid = true;
+            }
+            toggleSubmit();
+          });
+      } else {
+        emailAlert.innerHTML = '';
+        emailValid = false;
+        toggleSubmit();
+      }
+    });
+
+    // Username validation
+    usernameInput.addEventListener('input', function () {
+      const username = usernameInput.value.trim();
+      if (username.length > 2) {
+        fetch(`/check-username/?username=${encodeURIComponent(username)}`)
+          .then(response => response.json())
+          .then(data => {
+            usernameAlert.innerHTML = '';
+            if (data.exists) {
+              usernameAlert.innerHTML = `
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                  This username is already taken.
+                </div>`;
+              usernameValid = false;
+            } else {
+              usernameValid = true;
+            }
+            toggleSubmit();
+          });
+      } else {
+        usernameAlert.innerHTML = '';
+        usernameValid = false;
+        toggleSubmit();
+      }
+    });
+
+    // Confirm password match
+    function checkPasswordMatch() {
+      const password = passwordInput.value;
+      const confirmPassword = confirmPasswordInput.value;
+
+      confirmAlert.innerHTML = '';
+      if (confirmPassword.length > 0 && password !== confirmPassword) {
+        confirmAlert.innerHTML = `
+          <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            Passwords do not match.
+          </div>`;
+        passwordsMatch = false;
+      } else {
+        passwordsMatch = password.length >= 8 && confirmPassword.length >= 8;
+      }
+      toggleSubmit();
+    }
+
+    passwordInput.addEventListener('input', checkPasswordMatch);
+    confirmPasswordInput.addEventListener('input', checkPasswordMatch);
+
+    // Enable/disable submit button
+    function toggleSubmit() {
+      submitBtn.disabled = !(emailValid && usernameValid && passwordsMatch);
+    }
+  });
+</script>

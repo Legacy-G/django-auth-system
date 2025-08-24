@@ -1,0 +1,102 @@
+
+<!-- Modal -->
+    <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+          <!-- Messages Section -->
+          {% if messages %}
+            <div class="px-3 pt-3">
+              {% for message in messages %}
+                <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center" role="alert">
+                  <svg class="bi flex-shrink-0 me-2" width="24" height="24" role="img" aria-label="Danger:">
+                    <use xlink:href="#exclamation-triangle-fill"/>
+                  </svg>
+                  <div>{{ message }}</div>
+                  <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+
+          <!-- Modal Header -->
+          <div class="modal-header">
+            <h5 class="modal-title" id="loginModalLabel">Login</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+
+          <form method="POST" action="{% url 'login_page' %}">
+            {% csrf_token %}
+            <div class="modal-body">
+              <div class="mb-3">
+                <label for="loginEmail" class="form-label">Email or Username</label>
+                <input type="text" class="form-control" id="loginEmail" name="username" placeholder="name@example.com" required>
+              </div>
+
+              <div class="mb-3">
+                <label for="loginPassword" class="form-label">Password</label>
+                <input type="password" class="form-control" id="loginPassword" name="password" aria-describedby="passwordHelp" required>
+                <div id="passwordHelp" class="form-text">
+                  Must be 8-20 characters, include letters and numbers, no spaces or emoji.
+                </div>
+              </div>
+            </div>
+
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" onclick="switchToSigninModal()">Go to Signin</button>
+              <script>
+                function switchToSigninModal() {
+                  var loginModal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
+                  loginModal.hide();
+                  var signinModal = new bootstrap.Modal(document.getElementById('signinModal'));
+                  signinModal.show();
+                }
+              </script>
+              <button type="submit" class="btn btn-primary">Login</button>
+            </div>
+          </form>
+
+        </div>
+      </div>
+    </div>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        const usernameInput = document.getElementById('loginEmail');
+        const passwordInput = document.getElementById('loginPassword');
+        const loginBtn = document.querySelector('#loginModal button[type="submit"]');
+        const alertContainer = document.createElement('div');
+        alertContainer.classList.add('mt-2');
+        passwordInput.parentNode.insertBefore(alertContainer, passwordInput.nextSibling);
+
+        function validateCredentials() {
+          const username = usernameInput.value.trim();
+          const password = passwordInput.value.trim();
+
+          if (username.length > 2 && password.length >= 8) {
+            fetch(`/validate-login/?username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`)
+              .then(response => response.json())
+              .then(data => {
+                alertContainer.innerHTML = '';
+                if (!data.valid) {
+                  alertContainer.innerHTML = `
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                      ${data.message}
+                    </div>`;
+                  loginBtn.disabled = true;
+                } else {
+                  loginBtn.disabled = false;
+                }
+              });
+          } else {
+            alertContainer.innerHTML = '';
+            loginBtn.disabled = true;
+          }
+        }
+
+        usernameInput.addEventListener('input', validateCredentials);
+        passwordInput.addEventListener('input', validateCredentials);
+      });
+    </script>
+<!-- End Modal -->
+

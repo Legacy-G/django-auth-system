@@ -1,0 +1,45 @@
+{% extends "index.html" %}
+
+{% block title %}
+Landing Page - Django Authentication System
+{% endblock %}
+
+{% block list %}
+<!-- You can add additional links here if needed -->
+ <li class="nav-item"> <a class="nav-link disabled" aria-disabled="true">Disabled</a> </li>
+{% endblock list %}
+{% block content %}
+<div class="d-flex flex-column align-items-center justify-content-center vh-100">
+  <h1 class="mb-4 text-center">Welcome to my Landing Page</h1>
+  <div class="d-flex gap-3">
+    <!-- Button trigger modal -->
+    <button type="button" class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#loginModal">
+      Login
+    </button>
+    <button type="button" class="btn btn-secondary btn-lg" data-bs-toggle="modal" data-bs-target="#signinModal">
+      Signin
+    </button>
+  </div>
+</div>
+{% endblock %}
+
+{% block modal %}
+    {% include "authentication/login.html" %}
+    {% include "authentication/signin.html" %}
+{% endblock modal %}
+
+{% block scripts %}
+{% if show_modal %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    {% if show_modal == "login_page" %}
+      var loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+      loginModal.show();
+    {% elif show_modal == "signin" %}
+      var signinModal = new bootstrap.Modal(document.getElementById('signinModal'));
+      signinModal.show();
+    {% endif %}
+  });
+</script>
+{% endif %}
+{% endblock scripts %}
